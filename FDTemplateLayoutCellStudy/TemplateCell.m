@@ -24,8 +24,6 @@
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier{
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        // Fix the bug in iOS7 - initial constraints warning
-        self.contentView.bounds = [UIScreen mainScreen].bounds;
         [self initViews];
     }
     return self;
@@ -33,6 +31,8 @@
 
 #pragma mark - Private Menthod
 - (void)initViews{
+    // Fix the bug in iOS7 - initial constraints warning
+    self.contentView.bounds = [UIScreen mainScreen].bounds;
     //标题
     _titleLabel = [UILabel new];
     _titleLabel.textColor = [UIColor blueColor];
@@ -49,6 +49,7 @@
     _contentLabel.textColor = [UIColor lightGrayColor];
     _contentLabel.font = [UIFont systemFontOfSize:14];
     _contentLabel.numberOfLines = 0;
+    _contentLabel.lineBreakMode = NSLineBreakByWordWrapping;
     _contentLabel.preferredMaxLayoutWidth = [UIScreen mainScreen].bounds.size.width - 26;
     [self.contentView addSubview:_contentLabel];
     [_contentLabel mas_makeConstraints:^(MASConstraintMaker *make) {
@@ -56,15 +57,20 @@
         make.right.equalTo(self.contentView).offset(-10);
         make.top.equalTo(_titleLabel.mas_bottom).offset(6);
     }];
+    //[_contentLabel setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
+    [_contentLabel setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
    
     //图片
     _contentImageView = [UIImageView new];
+    _contentImageView.contentMode = UIViewContentModeScaleAspectFit;
     [self.contentView addSubview:_contentImageView];
     [_contentImageView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.left.equalTo(_titleLabel.mas_left);
         make.top.equalTo(_contentLabel.mas_bottom).offset(8);
         make.right.lessThanOrEqualTo(self.contentView).offset(-16);
     }];
+    [_contentImageView setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
+    [_contentImageView setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisHorizontal];
     
     //姓名
     _userNameLabel = [UILabel new];
@@ -86,14 +92,30 @@
         make.right.equalTo(self.contentView).offset(-10);
         make.baseline.equalTo(_userNameLabel.mas_baseline);
     }];
+   _titleLabel.mas_key = @"_titleLabel";
+    _contentLabel.mas_key = @"_contentLabel";
+    _contentImageView.mas_key = @"_contentImageView";
+    _userNameLabel.mas_key = @"_userNameLabel";
+    _timeLabel.mas_key = @"_timeLabel";
 }
+
+//如果不想用auto layout,覆盖这个方法，通过设置 "fd_enforceFrameLayout" to YES.
+/*- (CGSize)sizeThatFits:(CGSize)size{
+    CGFloat totalHeight = 0;
+    totalHeight += [self.titleLabel sizeThatFits:size].height;
+    totalHeight += [self.contentLabel sizeThatFits:size].height;
+    totalHeight += [self.contentImageView sizeThatFits:size].height;
+    totalHeight += [self.userNameLabel sizeThatFits:size].height;
+    totalHeight += 40;//边缘距离 margins
+    return CGSizeMake(size.width, totalHeight);
+}*/
 
 #pragma mark - setter menthod
 - (void)setEntity:(TemplateEntity *)entity{
     _entity = entity;
     self.titleLabel.text = entity.title;
     self.contentLabel.text = entity.content;
-    self.contentImageView.image = [UIImage imageNamed:entity.imageName];
+    self.contentImageView.image = entity.imageName.length > 0 ? [UIImage imageNamed:entity.imageName] : nil;
     self.userNameLabel.text = entity.userName;
     self.timeLabel.text = entity.time;
 }
